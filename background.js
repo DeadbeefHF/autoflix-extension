@@ -2,21 +2,23 @@
 // http://www.hackforums.net/private.php?action=send&uid=1519607
 
 chrome.browserAction.onClicked.addListener(function(tab) {
-	chrome.storage.sync.get("key", function(data) {
-		if (!chrome.runtime.lastError && data["key"] != undefined)
+	// Reset cookie and key checking
+	chrome.cookies.get({
+		url: "https://autoflix.deadbeef.me",
+		name: "reset"
+	}, function(cookie) {
+		if (cookie == null) {
+			retrieveKey();
 			return;
-		chrome.cookies.get({url: "https://autoflix.deadbeef.me", name: "key"},
-			function(cookie) {
-				if (cookie == null) {
-					alert("AutoFlix couldn't find your user key. Please make " +
-						"sure that cookies are enabled in your browser, then " +
-						"visit again the page linked in the order " +
-						"confirmation email you received. If you keep " +
-						"encountering this issue, please contact our support.");
-				}
-				chrome.storage.sync.set({key: cookie.value});
+		}
+		chrome.storage.sync.remove("key");
+		chrome.cookies.remove({
+			url: "https://autoflix.deadbeef.me",
+			name: "reset"
 		});
+		retrieveKey();
 	});
+
 
 	// Redirect to netflix.com if needed
 	if (!~tab.url.indexOf("netflix.com")) {
@@ -41,3 +43,25 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 chrome.webNavigation.onCommitted.addListener(function(details) {
 	chrome.tabs.executeScript(details.tabId, {file: "contentscript.js"});
 }, {url: [{"hostEquals": "autoflix.deadbeef.me"}]});
+
+// retrieveKey checks for the availability of the key in the local storage and
+// in the cookies
+var retrieveKey = function() {
+	chrome.storage.sync.get("key", function(data) {
+		if (!chrome.runtime.lastError && data["key"] != undefined)
+			return;
+		chrome.cookies.get({
+			url: "https://autoflix.deadbeef.me",
+			name: "key"
+		}, function(cookie) {
+			if (cookie == null) {
+				alert("AutoFlix couldn't find your user key. Please make sur " +
+				"sure that cookies are enabled in your browser, then visit " +
+				"again the page linked in the order confirmation email you " +
+				"received. If you keep encountering this issue, please " +
+				"contact our support.");
+			}
+			chrome.storage.sync.set({key: cookie.value});
+		});
+	});
+}
