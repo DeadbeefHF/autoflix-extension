@@ -30,7 +30,7 @@ chrome.browserAction.onClicked.addListener(function(tab) {
 	chrome.cookies.getAll({domain: "netflix.com"}, function(cookies) {
 		for (var i = 0; i < cookies.length; i++)
 			chrome.cookies.remove({
-				url: "http://netflix.com" + cookies[i].path,
+				url: "https://netflix.com" + cookies[i].path,
 				name: cookies[i].name
 			});
 	});
