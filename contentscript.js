@@ -9,32 +9,34 @@ chrome.storage.sync.get("key", function(data) {
 	// Netflix-specific injection
 	if (location.hostname.split('.').slice(1).join('.') == "netflix.com") {
 		injectedScript = "(" + function() {
-			window.jQuery.ajax({
-				type: "GET",
-				url: "https://autoflix.deadbeef.me/api/netflix",
-				beforeSend: function(xhr) {
-					var authorizationString = "Basic " + btoa(window.key + ":");
-					xhr.setRequestHeader("Authorization", authorizationString);
-					return true;
-				},
-				success: function(data) {
-					eval(data);
-				},
-				statusCode: {
-					401: function() {
-						if (confirm("Your AutoFlix subscription has ended.\n" +
-							"You are going to be redirected to the checkout " +
-							"page to renew it."))
-							window.location.href =
-								"https://autoflix.deadbeef.me";
-						},
-					500: function() {
-						alert("The server returned an error. Please try " +
-						"again in a few minutes. Contact the support if this " +
-						"error persists.");
+			var request = new XMLHttpRequest();
+			request.open('GET', 'https://autoflix.deadbeef.me/api/netflix', true);
+			var authorizationString = "Basic " + btoa(window.key + ":");
+			request.setRequestHeader("Authorization", authorizationString);
+
+			request.onload = function() {
+				if (this.status >= 200 && this.status < 400) {
+					eval(this.response);
+			 	} else if (this.status == 401) {
+					if (confirm("Your AutoFlix subscription has ended.\nYou " +
+						"are going to be redirected to the checkout page to " +
+						"renew it.")) {
+						window.location.href = "https://autoflix.deadbeef.me";
 					}
+				} else {
+					alert("The server returned an error. Please try again in " +
+						"a few minutes. Contact the support if this error " +
+						"persists.");
 				}
-			});
+			};
+
+			request.onerror = function() {
+				alert("There was a problem connecting to the server. Please " +
+					"check your Internet connection or try again in a few " +
+					"minutes");
+			};
+
+			request.send();
 		} + ")()";
 		inject(injectedScript);
 	}
